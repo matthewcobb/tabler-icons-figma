@@ -10,7 +10,7 @@ import {
   SearchTextbox,
   DropdownOption,
   Dropdown,
-  Columns,
+  SegmentedControl,
   Checkbox,
   Link,
 } from "@create-figma-plugin/ui";
@@ -121,19 +121,20 @@ function IconButton({
 function Plugin() {
 	const [search, setSearch] = useState<string>('')
 	const [category, setCategory] = useState<string>('')
-	const [style, setStyle] = useState<string>('2')
+	const [variant, setVariant] = useState<Variant>('outline')
 	const [outlineStroke, setOutlineStroke] = useState<boolean>(true);
 	const [wrapInFrame, setWrapInFrame] = useState<boolean>(false);
 
-	const variant: Variant = style === 'filled' ? 'filled' : 'outline'
-	const stroke = variant === 'outline' ? style : '2'
+	const stroke = '2'
 
 	const results = useSearch(search, category, variant)
 	const [limit, setLimit] = useState<number>(PAGE_SIZE)
 	const sentinelRef = useRef<HTMLDivElement>(null)
+	const contentRef = useRef<HTMLDivElement>(null)
 
 	useEffect(() => {
 		setLimit(PAGE_SIZE)
+		if (contentRef.current) contentRef.current.scrollTop = 0
 	}, [search, category, variant])
 
 	useEffect(() => {
@@ -144,7 +145,7 @@ function Plugin() {
 			if (entries.some(e => e.isIntersecting)) {
 				setLimit(prev => prev + PAGE_SIZE)
 			}
-		}, { rootMargin: '400px 0px' })
+		}, { root: contentRef.current, rootMargin: '400px 0px' })
 
 		observer.observe(sentinel)
 		return () => observer.disconnect()
@@ -158,8 +159,8 @@ function Plugin() {
 		setCategory(event.currentTarget.value)
 	}
 
-	function handleStyleChange(event: JSX.TargetedEvent<HTMLInputElement>) {
-		setStyle(event.currentTarget.value)
+	function handleVariantChange(event: JSX.TargetedEvent<HTMLInputElement>) {
+		setVariant(event.currentTarget.value as Variant)
 	}
 
 	function handleOutlineChange(event: JSX.TargetedEvent<HTMLInputElement>) {
@@ -190,16 +191,13 @@ function Plugin() {
 		})
 	})
 
-	const styles: Array<DropdownOption> = [
-		{ value: '1', text: 'Thin' },
-		{ value: '1.5', text: 'Light' },
-		{ value: '2', text: 'Normal' },
-		'-',
-		{ value: 'filled', text: 'Filled' },
+	const variantOptions = [
+		{ value: 'outline', children: 'Outline' },
+		{ value: 'filled', children: 'Filled' },
 	]
 
 	return (
-    <div>
+    <div class="app">
       <div class="search">
         <SearchTextbox
           onInput={handleInput}
@@ -209,22 +207,22 @@ function Plugin() {
         <Divider />
         <Container space="extraSmall">
           <VerticalSpace space="extraSmall" />
-          <Columns space="small">
-            <Dropdown
-              onChange={handleCategoryChange}
-              options={categories}
-              value={category}
-            />
-            <Dropdown
-              onChange={handleStyleChange}
-              options={styles}
-              value={style}
-            />
-          </Columns>
+          <Dropdown
+            onChange={handleCategoryChange}
+            options={categories}
+            value={category}
+          />
+          <VerticalSpace space="extraSmall" />
+          <SegmentedControl
+            onChange={handleVariantChange}
+            options={variantOptions}
+            value={variant}
+          />
           <VerticalSpace space="extraSmall" />
         </Container>
         <Divider />
       </div>
+      <div class="content" ref={contentRef}>
       <Container space="small">
         <VerticalSpace space="small" />
         {(() => {
@@ -277,6 +275,7 @@ function Plugin() {
           </div>
         )}
       </Container>
+      </div>
       <div className="footer">
         <Divider />
         <Container space="medium">

@@ -8,29 +8,41 @@ a:hover {
 	text-decoration: none;
 }
 
-.search {
-	position: sticky;
-	top: 0;
-	background: var(--figma-color-bg);
-	z-index: 1;
+html, body, #create-figma-plugin {
+	height: 100%;
 }
 
 body {
-	padding-bottom: 56px;
+	margin: 0;
+}
+
+.app {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+}
+
+.search {
+	flex: 0 0 auto;
+	background: var(--figma-color-bg);
+}
+
+.content {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
 }
 
 .footer {
-	position: fixed;
-	bottom: 0;
+	flex: 0 0 auto;
 	background: var(--figma-color-bg);
-	z-index: 1;
-	left: 0;
-	right: 0;
 }
 
 .grid {
 	display: grid;
-	grid-template-columns: repeat(6, 1fr);
+	grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
 	grid-gap: var(--space-extra-small);
 }
 
@@ -48,6 +60,8 @@ body {
 }
 
 .icon-button {
+	width: 40px;
+	height: 40px;
 	padding: 4px;
 	color: var(--figma-color-text);
 	background: transparent;
@@ -59,7 +73,7 @@ body {
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	aspect-ratio: 1;
+	justify-self: center;
 }
 
 .icon-button:hover {
@@ -76,11 +90,11 @@ body {
 	position: fixed;
 	right: 0;
 	bottom: 0;
-	width: 14px;
-	height: 14px;
+	width: 16px;
+	height: 16px;
 	cursor: nwse-resize;
 	z-index: 2;
-	color: var(--figma-color-text-tertiary);
+	color: var(--figma-color-text-secondary);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -88,5 +102,5 @@ body {
 }
 
 .resize-handle:hover {
-	color: var(--figma-color-text-secondary);
+	color: var(--figma-color-text);
 }
