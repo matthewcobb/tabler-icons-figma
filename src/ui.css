@@ -15,6 +15,10 @@ a:hover {
 	z-index: 1;
 }
 
+body {
+	padding-bottom: 56px;
+}
+
 .footer {
 	position: fixed;
 	bottom: 0;
@@ -28,6 +32,19 @@ a:hover {
 	display: grid;
 	grid-template-columns: repeat(6, 1fr);
 	grid-gap: var(--space-extra-small);
+}
+
+.category-group {
+	margin-bottom: var(--space-medium);
+}
+
+.category-heading {
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--figma-color-text-secondary);
+	padding: var(--space-extra-small) 0;
 }
 
 .icon-button {
@@ -53,4 +70,23 @@ a:hover {
 .icon-button:active {
 	border: 1px solid var(--figma-color-border-selected);
 	outline: 1px solid var(--figma-color-border-selected);
+}
+
+.resize-handle {
+	position: fixed;
+	right: 0;
+	bottom: 0;
+	width: 14px;
+	height: 14px;
+	cursor: nwse-resize;
+	z-index: 2;
+	color: var(--figma-color-text-tertiary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	touch-action: none;
+}
+
+.resize-handle:hover {
+	color: var(--figma-color-text-secondary);
 }

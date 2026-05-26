@@ -37,6 +37,26 @@ Use `console.log` statements to inspect values in your code.
 
 To open the developer console, search for and run `Open Console` via the Quick Actions search bar.
 
+### Updating icons
+
+Icons are bundled into `src/icons.json` at build time, so shipping new Tabler icons to users requires re-publishing the plugin.
+
+To pull the latest `@tabler/icons` release, rebuild the bundle, and commit/push:
+
+```
+$ pnpm run icons
+```
+
+This script:
+
+1. Bumps `@tabler/icons` to the latest version (`ncu -u`).
+2. Installs dependencies.
+3. Regenerates `src/icons.json` from the newly installed icon set (`node import-icons`).
+4. Runs `pnpm run build`.
+5. Commits the changes with a message like `update icons to v<version>` and pushes.
+
+After pushing, publish a new version of the plugin in Figma's plugin manager so users receive the update.
+
 ## See also
 
 - [Create Figma Plugin docs](https://yuanqing.github.io/create-figma-plugin/)

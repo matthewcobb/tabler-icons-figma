@@ -28,8 +28,8 @@ importers:
         specifier: 1.121.0
         version: 1.121.0
       '@tabler/icons':
-        specifier: ^3.35.0
-        version: 3.35.0
+        specifier: ^3.43.0
+        version: 3.43.0
       fuse.js:
         specifier: ^7.1.0
         version: 7.1.0
@@ -249,8 +249,8 @@ packages:
     resolution: {integrity: sha512-doH1gimEu3A46VX6aVxpHTeHrytJAG6HgdxntYnCFiIFHEM/ZGpG8KiZGBChchjQmG0XFIBL552kBTjVcMZXwQ==}
     engines: {node: '>=12'}
 
-  '@tabler/icons@3.35.0':
-    resolution: {integrity: sha512-yYXe+gJ56xlZFiXwV9zVoe3FWCGuZ/D7/G4ZIlDtGxSx5CGQK110wrnT29gUj52kEZoxqF7oURTk97GQxELOFQ==}
+  '@tabler/icons@3.43.0':
+    resolution: {integrity: sha512-qXwS17Op9jqr3Asvu31fejyw8+OnRDKH7oR8nQXyUgW1pI44ET8OKG9kssy+XIvvAIyej6gZdGmviNUn1VMfPw==}
 
   ansi-regex@5.0.1:
     resolution: {integrity: sha512-quJQXlTSUGL2LH9SUXo8VwsY4soanhgo6LNSm84E1LBcE8s3O0wpdiRzyR9z/ZZJMlMWv37qOOb9pdJlMUEKFQ==}
@@ -1193,7 +1193,7 @@ snapshots:
     dependencies:
       escape-string-regexp: 5.0.0
 
-  '@tabler/icons@3.35.0': {}
+  '@tabler/icons@3.43.0': {}
 
   ansi-regex@5.0.1: {}
 

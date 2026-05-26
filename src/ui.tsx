@@ -3,7 +3,6 @@ import '!./ui.css'
 import {
   Container,
   Divider,
-  Bold,
   render,
   Text,
   Muted,
@@ -20,41 +19,99 @@ import {
 } from '@create-figma-plugin/utilities'
 
 import { h, JSX } from 'preact'
-import { useState } from 'preact/hooks'
+import { useEffect, useRef, useState } from 'preact/hooks'
 import { version, icons } from './icons.json'
 import useSearch from './use-search'
 
+const PAGE_SIZE = 120
+const MIN_WIDTH = 260
+const MIN_HEIGHT = 320
+
+function ResizeHandle() {
+  function handlePointerDown(event: JSX.TargetedPointerEvent<HTMLDivElement>) {
+    event.preventDefault()
+    const target = event.currentTarget
+    target.setPointerCapture(event.pointerId)
+
+    const onMove = (e: PointerEvent) => {
+      const width = Math.max(MIN_WIDTH, Math.round(e.clientX + 4))
+      const height = Math.max(MIN_HEIGHT, Math.round(e.clientY + 4))
+      emit('RESIZE', { width, height })
+    }
+
+    const onUp = (e: PointerEvent) => {
+      target.releasePointerCapture(e.pointerId)
+      target.removeEventListener('pointermove', onMove)
+      target.removeEventListener('pointerup', onUp)
+      target.removeEventListener('pointercancel', onUp)
+    }
+
+    target.addEventListener('pointermove', onMove)
+    target.addEventListener('pointerup', onUp)
+    target.addEventListener('pointercancel', onUp)
+  }
+
+  return (
+    <div
+      class="resize-handle"
+      onPointerDown={handlePointerDown}
+      aria-label="Resize plugin window"
+    >
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M13 5L5 13" stroke="currentColor" stroke-width="1" stroke-linecap="round" />
+        <path d="M13 9L9 13" stroke="currentColor" stroke-width="1" stroke-linecap="round" />
+        <path d="M13 13L13 13" stroke="currentColor" stroke-width="1" stroke-linecap="round" />
+      </svg>
+    </div>
+  )
+}
+
+type Variant = 'outline' | 'filled'
+
 type Icon = {
 	name: string,
-	svg: string,
 	category: string,
-	tags: (string | number | null)[]
+	tags: (string | number | null)[],
+	outline: string | null,
+	filled: string | null,
 }
 
 function IconButton({
   icon,
   stroke,
+  variant,
   outlineStroke,
+  wrapInFrame,
 }: {
   icon: Icon;
   stroke: string;
+  variant: Variant;
   outlineStroke: boolean;
+  wrapInFrame: boolean;
 }) {
-  const svg = icon.svg.replace('stroke-width="2"', `stroke-width="${stroke}"`);
+  const baseSvg = variant === 'filled' ? icon.filled : icon.outline;
+  if (!baseSvg) return null;
 
-  const handleClick = (name: string, svg: string) => {
+  const svg = variant === 'outline'
+    ? baseSvg.replace('stroke-width="2"', `stroke-width="${stroke}"`)
+    : baseSvg;
+
+  const handleClick = (name: string, category: string, svg: string) => {
     emit("SUBMIT", {
       name,
+      category,
       svg,
+      variant,
       outlineStroke,
+      wrapInFrame,
     });
   };
 
   return (
     <button
-      key={icon.name}
+      key={`${icon.name}-${variant}`}
       aria-label={icon.name}
-      onClick={() => handleClick(icon.name, svg)}
+      onClick={() => handleClick(icon.name, icon.category, svg)}
       class="icon-button"
       dangerouslySetInnerHTML={{ __html: svg }}
     ></button>
@@ -64,11 +121,34 @@ function IconButton({
 function Plugin() {
 	const [search, setSearch] = useState<string>('')
 	const [category, setCategory] = useState<string>('')
-	const [stroke, setStroke] = useState<string>('2')
-	const [outlineStroke, setOutlineStroke] = useState<boolean>(false);
+	const [style, setStyle] = useState<string>('2')
+	const [outlineStroke, setOutlineStroke] = useState<boolean>(true);
+	const [wrapInFrame, setWrapInFrame] = useState<boolean>(false);
 
-	const results = useSearch(search, category)
-	const limit = 102
+	const variant: Variant = style === 'filled' ? 'filled' : 'outline'
+	const stroke = variant === 'outline' ? style : '2'
+
+	const results = useSearch(search, category, variant)
+	const [limit, setLimit] = useState<number>(PAGE_SIZE)
+	const sentinelRef = useRef<HTMLDivElement>(null)
+
+	useEffect(() => {
+		setLimit(PAGE_SIZE)
+	}, [search, category, variant])
+
+	useEffect(() => {
+		const sentinel = sentinelRef.current
+		if (!sentinel) return
+
+		const observer = new IntersectionObserver((entries) => {
+			if (entries.some(e => e.isIntersecting)) {
+				setLimit(prev => prev + PAGE_SIZE)
+			}
+		}, { rootMargin: '400px 0px' })
+
+		observer.observe(sentinel)
+		return () => observer.disconnect()
+	}, [])
 
 	function handleInput(event: JSX.TargetedEvent<HTMLInputElement>) {
 		setSearch(event.currentTarget.value)
@@ -78,12 +158,16 @@ function Plugin() {
 		setCategory(event.currentTarget.value)
 	}
 
-	function handleStrokeChange(event: JSX.TargetedEvent<HTMLInputElement>) {
-		setStroke(event.currentTarget.value)
+	function handleStyleChange(event: JSX.TargetedEvent<HTMLInputElement>) {
+		setStyle(event.currentTarget.value)
 	}
 
 	function handleOutlineChange(event: JSX.TargetedEvent<HTMLInputElement>) {
     setOutlineStroke(event.currentTarget.checked);
+  }
+
+	function handleWrapChange(event: JSX.TargetedEvent<HTMLInputElement>) {
+    setWrapInFrame(event.currentTarget.checked);
   }
 
 	let c: string[] = []
@@ -106,10 +190,12 @@ function Plugin() {
 		})
 	})
 
-	const strokes: Array<DropdownOption> = [
+	const styles: Array<DropdownOption> = [
 		{ value: '1', text: 'Thin' },
 		{ value: '1.5', text: 'Light' },
 		{ value: '2', text: 'Normal' },
+		'-',
+		{ value: 'filled', text: 'Filled' },
 	]
 
 	return (
@@ -130,9 +216,9 @@ function Plugin() {
               value={category}
             />
             <Dropdown
-              onChange={handleStrokeChange}
-              options={strokes}
-              value={stroke}
+              onChange={handleStyleChange}
+              options={styles}
+              value={style}
             />
           </Columns>
           <VerticalSpace space="extraSmall" />
@@ -141,30 +227,37 @@ function Plugin() {
       </div>
       <Container space="small">
         <VerticalSpace space="small" />
-        {(search || category != "") && (
-          <div>
-            <Text>
-              <Bold>
-                Icons
-                {search && ` matched "${search}"`}
-                {category != "" && ` in category "${category}"`}
-                {":"}
-              </Bold>
-            </Text>
-            <VerticalSpace space="small" />
-          </div>
-        )}
-      </Container>
-      <Container space="small">
-        <div class="grid">
-          {results.slice(0, limit).map((icon) => (
-            <IconButton
-              icon={icon}
-              stroke={stroke}
-              outlineStroke={outlineStroke}
-            />
-          ))}
-        </div>
+        {(() => {
+          const visible = results.slice(0, limit) as Icon[]
+          const groups: Array<{ category: string; icons: Icon[] }> = []
+          const indexByCategory = new Map<string, number>()
+          for (const icon of visible) {
+            const cat = icon.category || 'Other'
+            let idx = indexByCategory.get(cat)
+            if (idx === undefined) {
+              idx = groups.length
+              indexByCategory.set(cat, idx)
+              groups.push({ category: cat, icons: [] })
+            }
+            groups[idx].icons.push(icon)
+          }
+          return groups.map((group) => (
+            <div key={group.category} class="category-group">
+              <div class="category-heading">{group.category}</div>
+              <div class="grid">
+                {group.icons.map((icon) => (
+                  <IconButton
+                    icon={icon}
+                    stroke={stroke}
+                    variant={variant}
+                    outlineStroke={outlineStroke}
+                    wrapInFrame={wrapInFrame}
+                  />
+                ))}
+              </div>
+            </div>
+          ))
+        })()}
         {results.length === 0 && (
           <div>
             <VerticalSpace space="medium" />
@@ -174,44 +267,48 @@ function Plugin() {
             <VerticalSpace space="large" />
           </div>
         )}
-        {results.length - limit > 0 && (
+        <div ref={sentinelRef} />
+        {results.length > limit && (
           <div>
             <VerticalSpace space="medium" />
             <Text align="center">
-              <Muted>
-                &hellip;and {results.length - limit} more. Use the search to
-                find more icons.
-              </Muted>
+              <Muted>Loading more&hellip;</Muted>
             </Text>
           </div>
         )}
-        <VerticalSpace space="extraLarge" />
-        <Text>
-          <Muted>Tabler Icons v{version}</Muted>
-        </Text>
-        <VerticalSpace space="extraLarge" />
-        <VerticalSpace space="extraLarge" />
       </Container>
       <div className="footer">
         <Divider />
         <Container space="medium">
           <VerticalSpace space="small" />
-          <Columns style={{ alignItems: "center" }}>
-            <Checkbox onChange={handleOutlineChange} value={outlineStroke}>
-              <Text>Paste icons as outline</Text>
-            </Checkbox>
-            <Text align="right">
-              <Link
-                href="https://tabler-icons.io/?utm_source=figma-plugin"
-                target="_blank"
-              >
-                Tabler Icons
-              </Link>
-            </Text>
-          </Columns>
+          <Checkbox
+            onChange={handleOutlineChange}
+            value={outlineStroke}
+            disabled={variant === 'filled'}
+          >
+            <Text>Paste icons as outline</Text>
+          </Checkbox>
+          <VerticalSpace space="small" />
+          <Checkbox
+            onChange={handleWrapChange}
+            value={wrapInFrame}
+          >
+            <Text>Wrap in 24×24 frame</Text>
+          </Checkbox>
+          <VerticalSpace space="small" />
+          <Text align="right">
+            <Muted>v{version} &middot; </Muted>
+            <Link
+              href="https://tabler-icons.io/?utm_source=figma-plugin"
+              target="_blank"
+            >
+              Tabler Icons
+            </Link>
+          </Text>
           <VerticalSpace space="small" />
         </Container>
       </div>
+      <ResizeHandle />
     </div>
   );
 }

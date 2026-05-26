@@ -14,30 +14,39 @@ const prepareSvgFile = (svg) => {
 
 const iconsPkg = require('./node_modules/@tabler/icons/package.json')
 
+const readSvg = (variant, name) => {
+	const path = `./node_modules/@tabler/icons/icons/${variant}/${name}.svg`
+	if (!fs.existsSync(path)) return null
+	return prepareSvgFile(fs.readFileSync(path).toString())
+}
+
 const generateIconsJSON = (jsonFile, filename) => {
 	const files = JSON.parse(fs.readFileSync(jsonFile))
 
-	let svgList = [];
-	let svgData = {
-		version: iconsPkg.version,
-		icons: []
-	}
+	const svgList = []
 
-	for (let iconName in files) {
-		let iconData = files[iconName]
+	for (const iconName in files) {
+		const iconData = files[iconName]
+		const styles = iconData.styles || {}
+
+		const outline = styles.outline ? readSvg('outline', iconName) : null
+		const filled = styles.filled ? readSvg('filled', iconName) : null
+
+		if (!outline && !filled) continue
 
 		svgList.push({
 			name: iconName,
-			// version: iconData.version,
 			category: iconData.category,
 			tags: iconData.tags,
-			// unicode: iconData.unicode,
-			svg: prepareSvgFile(fs.readFileSync(`./node_modules/@tabler/icons/icons/outline/${iconName}.svg`).toString())
+			outline,
+			filled,
 		})
 	}
 
-	svgData.version = iconsPkg.version
-	svgData.icons = svgList
+	const svgData = {
+		version: iconsPkg.version,
+		icons: svgList,
+	}
 
 	fs.writeFileSync(filename, JSON.stringify(svgData))
 }

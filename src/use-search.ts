@@ -3,7 +3,7 @@ import { useState, useEffect } from 'preact/hooks'
 
 import { icons } from './icons.json'
 
-function useSearch(query: string, category: string) {
+function useSearch(query: string, category: string, variant: 'outline' | 'filled') {
 	const values = Object.values(icons)
 	const [results, setResults] = useState(values)
 
@@ -13,12 +13,19 @@ function useSearch(query: string, category: string) {
 	})
 
 	useEffect(() => {
-		if (query.trim()) {
-			setResults(filterResult.search(query.trim()).map(result => result.item).filter(icon => category === '' || icon.category == category))
-		} else {
-			setResults(values.filter(icon => category === '' || icon.category == category))
+		const matchesFilters = (icon: typeof values[number]) => {
+			if (category !== '' && icon.category !== category) return false
+			if (variant === 'filled' && !icon.filled) return false
+			if (variant === 'outline' && !icon.outline) return false
+			return true
 		}
-	}, [query, category])
+
+		if (query.trim()) {
+			setResults(filterResult.search(query.trim()).map(result => result.item).filter(matchesFilters))
+		} else {
+			setResults(values.filter(matchesFilters))
+		}
+	}, [query, category, variant])
 
 	return results
 }
